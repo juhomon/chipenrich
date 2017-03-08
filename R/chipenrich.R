@@ -419,11 +419,16 @@ chipenrich = function(
 	######################################################
 	# Assign peaks to genes. NOTE: If method = 'broadenrich' use
 	# assign_peak_segments(), otherwise use assign_peaks().
-	if(!(method == 'broadenrich' || method == 'broadenrich_splineless')) {
+	if (method == 'polyenrich_weighted') {
+		message("Assigning peaks to genes with assign_peaks(...) with signalValue ..")
+		assigned_peaks = assign_peaks_plus(peakobj, ldef, tss)
+		assigned_peaks$peak_weight = assigned_peaks$signalValue/mean(assigned_peaks$signalValue)
+		message("Successfully assigned peaks..")
+	} else if(!(method == 'broadenrich' || method == 'broadenrich_splineless')) {
 		message("Assigning peaks to genes with assign_peaks(...) ..")
 		assigned_peaks = assign_peaks(peakobj, ldef, tss)
 		message("Successfully assigned peaks..")
-	} else {
+	} else if ((method == 'broadenrich' || method == 'broadenrich_splineless')){
 		message("Assigning peaks to genes with assigned_peak_segments(...) ..")
 		assigned_peaks = assign_peak_segments(peakobj, ldef)
 		message("Successfully assigned peaks..")
@@ -458,7 +463,8 @@ chipenrich = function(
 		"nearest_tss_gene_strand",
 		"overlap_start",
 		"overlap_end",
-		"peak_overlap")
+		"peak_overlap",
+		"peak_weight")
 	column_order = intersect(column_order, names(assigned_peaks))
 	assigned_peaks = assigned_peaks[, column_order]
 
@@ -476,6 +482,10 @@ chipenrich = function(
 	if(method == 'chipapprox') {
 		message("Calculating weights for approximate method..")
 		ppg = calc_approx_weights(ppg,mappa)
+	}
+	if (method == 'polyenrich_weighted') {
+		ppg = calc_genes_peak_weight(assigned_peaks, ppg)
+		ppg$num_peaks = ppg$peak_weight
 	}
 
 	######################################################

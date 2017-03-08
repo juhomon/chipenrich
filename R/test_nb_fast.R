@@ -67,17 +67,21 @@ single_gam_nb_fast = function(go_id, geneset, gpw, fitspl, method, model) {
 	if (all(as.logical(sg_go))) {
 		cont_length = quantile(gpw$length,0.0025);
 		
-		if (method == "nbspeed") {
-			cont_gene = data.frame(
-				geneid = "continuity_correction",
-				length = cont_length,
-				log10_length = log10(cont_length),
-				num_peaks = 0,
-				peak = 0,
-				stringsAsFactors = F
-			);
-			as.numeric(predict(fitspl, cont_gene, type="terms"))->cont_gene$spline
-		} 
+
+        cont_gene = data.frame(
+			geneid = "continuity_correction",
+			length = cont_length,
+			log10_length = log10(cont_length),
+			num_peaks = 0,
+			peak = 0,
+			stringsAsFactors = F
+		);
+		as.numeric(predict(fitspl, cont_gene, type="terms"))->cont_gene$spline
+		
+        if (method == "polyenrich_weighted") {
+            cont_gene$peak_weight = 1
+        }
+        
 		
 		if ("mappa" %in% names(gpw)) {
 			cont_gene$mappa = 1;
