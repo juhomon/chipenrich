@@ -41,7 +41,7 @@ os = Sys.info()[1]
 #' the full path to a user-defined locus definition file. A gene locus definition
 #' controls how peaks are assigned to genes. See \code{\link{supported_locusdefs}}
 #' for a list of supported definitions built-in. If using a user-specified file,
-#' the file must have 4 columns: geneid, chrom, start, end and be tab-delimited.
+#' the file must have 4 columns: gene_id, chrom, start, end and be tab-delimited.
 #' @param method A character string specifying the method to use for enrichment
 #' testing. Must be one of ChIP-Enrich ('chipenrich') (default), ChIP-Enrich fast
 #' ('chipenrich_fast'), Broad-Enrich ('broadenrich'), Count-Enrich ('countenrich'),
@@ -56,7 +56,7 @@ os = Sys.info()[1]
 #' experiment (see \code{read_length} option). NOTE: If providing a \code{mappa_file}
 #' this parameter should be set to FALSE.
 #' @param mappa_file Path to a file containing user-specified gene locus
-#' mappability. The file should contain two columns: geneid and mappa. Gene IDs
+#' mappability. The file should contain two columns: gene_id and mappa. Gene IDs
 #' should be Entrez gene IDs. Mappability values should be between 0 and 1.
 #' @param read_length If adjusting for mappability, this number specifies the
 #' read length to be used. The read length given here should ideally correspond
@@ -90,12 +90,12 @@ os = Sys.info()[1]
 #'   \item{peak_start}{ is start position of the peak. }
 #'   \item{peak_end}{ is end position of the peak. }
 #'   \item{peak_midpoint}{ is the midpoint of the peak. }
-#'   \item{geneid}{ is the Entrez ID of the gene to which the peak was assigned. }
-#'   \item{gene_symbol}{ is the official gene symbol for the geneid (above). }
+#'   \item{gene_id}{ is the Entrez ID of the gene to which the peak was assigned. }
+#'   \item{gene_symbol}{ is the official gene symbol for the gene_id (above). }
 #'   \item{gene_locus_start}{ is the start position of the locus for the gene to which the peak was assigned (specified by the locus definition used.) }
 #'   \item{gene_locus_end}{ is the end position of the locus for the gene to which the peak was assigned (specified by the locus definition used.) }
 #'   \item{nearest_tss}{ (\code{method='chipenrich'} and \code{method='fet'}) is the closest TSS to this peak (for any gene, not necessarily the gene this peak was assigned to.) }
-#'   \item{nearest_tss_gene}{ (\code{method='chipenrich'} and \code{method='fet'}) is the gene having the closest TSS to the peak (should be the same as geneid when using the nearest TSS locus definition.) }
+#'   \item{nearest_tss_gene}{ (\code{method='chipenrich'} and \code{method='fet'}) is the gene having the closest TSS to the peak (should be the same as gene_id when using the nearest TSS locus definition.) }
 #'   \item{nearest_tss_gene_strand}{ (\code{method='chipenrich'} and \code{method='fet'}) is the strand of the gene with the closest TSS. }
 #'   \item{overlap_start}{ (\code{method='broadenrich'} only) the start position of the peak overlap with the gene locus.}
 #'   \item{overlap_end}{ (\code{method='broadenrich'} only) the end position of the peak overlap with the gene locus.}
@@ -128,7 +128,7 @@ os = Sys.info()[1]
 #' A data frame of the count of peaks per gene. The columns are:
 #'
 #' \describe{
-#'   \item{geneid}{ is the Entrez Gene ID. }
+#'   \item{gene_id}{ is the Entrez Gene ID. }
 #'   \item{length}{ is the length of the gene's locus (depending on which locus definition you chose.)}
 #'   \item{log10_length}{ is the log10(locus length) for the gene.}
 #'   \item{num_peaks}{ is the number of peaks that were assigned to the gene, given the current locus definition. }
@@ -181,13 +181,15 @@ chipenrich = function(
 
 	############################################################################
 	# Collect options for opts output
-	l = unlist(as.list(environment()))
+	opts_list = as.list(sys.call())
+	opts_list = opts_list[2:length(opts_list)]
+
 	opts = data.frame(
-		args = names(l),
-		values = sapply(unlist(l),paste,collapse=","),
-		stringsAsFactors = F
+		parameters = names(opts_list),
+		values = as.character(opts_list),
+		stringsAsFactors = FALSE
 	)
-	rownames(opts) = 1:length(l)
+
 
 	############################################################################
 	# Deal with randomizations if present
@@ -241,7 +243,7 @@ chipenrich = function(
 	# CHECK genesets and load them if okay
 	# Determine if geneset codes are valid before moving on. The API for a user
 	# to use their own genesets will be to put a path in the genesets argument.
-	if (!any(supported_genesets()$organism == organism & genesets == supported_genesets()$geneset)) {
+	if (!any(supported_genesets()$organism == organism & genesets %in% supported_genesets()$geneset)) {
 		bad_args = check_arg(genesets, supported_genesets()$geneset, value=T)
 
 		# If the bad_args is a path that exists, then we know the user wants
@@ -346,6 +348,7 @@ chipenrich = function(
 			data(list = mappa_code, package = "chipenrich.data", envir = environment())
 			mappa = get(mappa_code)
 			mappa = na.omit(mappa)
+			colnames(mappa) = c('gene_id', 'mappa')
 		} else {
 			mappa = NULL
 		}
@@ -353,8 +356,8 @@ chipenrich = function(
 
 	# If they specified their own mappability, check gene names overlap
 	if (user_defined_mappa && user_defined_ldef) {
-		total_unique_genes = union(mappa$geneid, ldef@dframe$geneid)
-		mappa_ldef_inters = intersect(mappa$geneid, ldef@dframe$geneid)
+		total_unique_genes = union(mappa$gene_id, ldef@dframe$gene_id)
+		mappa_ldef_inters = intersect(mappa$gene_id, ldef@dframe$gene_id)
 		frac_overlap = length(mappa_ldef_inters) / length(total_unique_genes)
 
 		if (frac_overlap < 0.95) {
@@ -435,6 +438,7 @@ chipenrich = function(
 	}
 
 	######################################################
+<<<<<<< HEAD
 	# Post-process assigned peaks to add gene symbols and order the columns
 	peak_genes = unique(assigned_peaks$geneid)
 
@@ -469,6 +473,8 @@ chipenrich = function(
 	assigned_peaks = assigned_peaks[, column_order]
 
 	######################################################
+=======
+>>>>>>> master
 	# Compute peaks per gene table
 	ppg = num_peaks_per_gene(assigned_peaks, ldef, mappa)
 	# This seems redundant given num_peaks_per_gene(...)

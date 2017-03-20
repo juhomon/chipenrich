@@ -1,93 +1,49 @@
 # Randomize the locus definition @dframe and rebuild the @granges and @chrom2iranges
 randomize_locusdef = function(ldef, resolution=50) {
-	message('Extracting definition data frame..')
-	ldef_df = ldef@dframe
+	# Extract GRanges representation
+	ldef_gr = ldef@granges
 
-	message('Splitting data frame on chrom..')
-	ldef_chrom = split(ldef_df, f=ldef_df$chrom)
+	# Split by chromosome
+	ldef_grl = S4Vectors::split(ldef_gr, GenomeInfoDb::seqnames(ldef_gr))
 
-	message('Working within each chrom..')
-	ldef_chrom = lapply(ldef_chrom, function(lc) {
-		chrom = unique(lc$chrom)
-
-		message(paste('	On chrom', chrom))
-
-		# Collapse consecutive rows of the ldef when the geneid is the same
-			# Split by geneid
-			message('		Splitting chrom on gene id..')
-			lc_geneid = split(lc, lc$geneid)
-
-			# For each geneid df, create an IRanges object to apply IRanges::reduce to
-			message('		Applying IRanges::reduce to each gene id group..')
-			lc_geneid_ir = lapply(lc_geneid, function(lcg) {
-				geneid = unique(lcg$geneid)
-
-				ir = IRanges::IRanges(start=lcg$start, end = lcg$end, names=lcg$geneid)
-				ir = IRanges::reduce(ir)
-				names(ir) = rep.int(geneid, length(ir))
-
-				return(as.data.frame(ir, stringsAsFactors=F))
+	# Within each chromosome:
+	# 1. Form groups based on the number of genes on that chromosome
+	# 2. Split the chromosome GRanges by the groups (GRangesList)
+	# 3. Within each group within each chromosome, scramble the mcols
+	# 4. Collapse the groups so the result is a GRanges for the chromosome again (empty GRanges for chromosomes without genes).
+	re_ldef_grl = S4Vectors::endoapply(ldef_grl, function(gr) {
+		if(length(gr) > 0) {
+			# Create groups within the chromosome
+			group = floor( (seq_along(gr) + (resolution - 1)) / resolution )
+			# Split by the group
+			grl = IRanges::splitAsList(gr, group)
+			# Rearrange mcols within each group
+			re_grl = S4Vectors::endoapply(grl, function(grg){
+				GenomicRanges::mcols(grg) = GenomicRanges::mcols(grg)[sample(seq_along(grg), length(grg)),]
+				return(grg)
 			})
+			# Collapse the GRangesList into the scrambled GRanges for the chromosome
+			re_gr = BiocGenerics::unlist(re_grl, use.names = FALSE)
+		} else {
+			# Need this for chromosomes without genes
+			re_gr = GenomicRanges::GRanges()
+		}
 
-		# Now put all the data.framed IRange objects back together
-		message('		Collapsing reduced definition..')
-		lc_collapsed = Reduce(rbind, lc_geneid_ir)
-
-		# Add chromosome column back, rename names column, and sort columns
-		message('		Formatting reduced definition..')
-		lc_collapsed$chrom = chrom
-		colnames(lc_collapsed) = c('start','end','width','geneid','chrom')
-		lc_collapsed = lc_collapsed[,c('geneid','chrom','start','end')]
-
-		# Sort lc_collapsed by the starting position and rename rownames
-		message('		Sorting reduced definition..')
-		lc_collapsed = lc_collapsed[order(lc_collapsed$start),]
-		rownames(lc_collapsed) = 1:nrow(lc_collapsed)
-
-		# Form groups
-		group = floor(as.numeric(rownames(lc_collapsed))+(resolution-1))/resolution
-		group = floor(group)
-
-		# Split the chromosome into parts by group
-		message(paste('		Shuffling within bins of', resolution, 'genes'))
-		split_lc = split(lc_collapsed, group)
-		split_lc = lapply(split_lc, function(bin){
-			reordering = sample(1:nrow(bin), nrow(bin))
-
-			# Scramble geneids
-			data.frame('geneid' = bin$geneid[reordering], bin[,2:ncol(bin)], stringsAsFactors=F)
-		})
-		lc = Reduce(rbind, split_lc)
-
-		return(lc)
+		return(re_gr)
 	})
+	# Collapse the GRangesList across the chromosomes
+	re_ldef_gr = unlist(re_ldef_grl, use.names = FALSE)
+	# Make sure it's sorted
+	re_ldef_gr = sort(re_ldef_gr)
 
-	message('Done rejiggering genomic locations for data frame..')
-	ldef_df = Reduce(rbind, ldef_chrom)
+	# Construct data.frame for new locus definition
+	re_ldef_df = data.frame(re_ldef_gr, stringsAsFactors = FALSE)
+	re_ldef_df = re_ldef_df[, c('seqnames','start','end','gene_id','symbol')]
+	colnames(re_ldef_df) = c('chr','start','end','gene_id','symbol')
 
-	message('Creating new GenomicRanges object..')
-	ldef_gr = GenomicRanges::GRanges(
-		seqnames = ldef_df$chrom,
-		ranges = IRanges::IRanges(start=ldef_df$start, end=ldef_df$end),
-		names = ldef_df$geneid
-	)
-
-	message('Creating new IRanges object..')
-	chroms = c(paste('chr',1:22,sep=''),'chrX','chrY')
-
-	chr_list = chroms
-	names(chr_list) = chroms
-
-	ldef_ir = lapply(chr_list, function(chr) {
-		sub_ldef_df = subset(ldef_df, ldef_df$chrom==chr)
-
-		ir = IRanges::IRanges(start=sub_ldef_df$start, end=sub_ldef_df$end, names=sub_ldef_df$geneid)
-		return(ir)
-	})
-
-	ldef@dframe = ldef_df
-	ldef@granges = ldef_gr
-	ldef@chrom2iranges = ldef_ir
+	# Reassign the dframe and granges to the ldef
+	ldef@dframe = re_ldef_df
+	ldef@granges = re_ldef_gr
 
 	return(ldef)
 }
@@ -98,7 +54,7 @@ randomize_ppg_all = function(ppg) {
 	rownames(ppg) = 1:nrow(ppg)
 
 	reordering = sample(1:nrow(ppg), nrow(ppg))
-	ppg = data.frame('geneid'=ppg$geneid, ppg[reordering,2:ncol(ppg)], stringsAsFactors=F)
+	ppg = data.frame('gene_id'=ppg$gene_id, ppg[reordering,2:ncol(ppg)], stringsAsFactors=F)
 
 	return(ppg)
 }
@@ -116,7 +72,7 @@ randomize_ppg_length = function(ppg) {
 	split_ppg = lapply(split_ppg, function(bin){
 		reordering = sample(1:nrow(bin), nrow(bin))
 
-		data.frame('geneid'=bin$geneid, bin[reordering,2:ncol(bin)], stringsAsFactors=F)
+		data.frame('gene_id'=bin$gene_id, bin[reordering,2:ncol(bin)], stringsAsFactors=F)
 	})
 	ppg = Reduce(rbind, split_ppg)
 

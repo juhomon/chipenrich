@@ -1,27 +1,32 @@
-test_gam_nb_fast = function(geneset,gpw,n_cores) {
+test_PEW_fast = function(geneset,gpw,n_cores,counts) {
 	# Restrict our genes/weights/peaks to only those genes in the genesets.
 	# Here, geneset is not all combined, but GOBP, GOCC, etc.
 	# i.e. A specific one.
-	gpw = subset(gpw,gene_id %in% geneset@all.genes);
+	gpw = subset(gpw,geneid %in% geneset@all.genes);
 	
 	if (sum(gpw$peak) == 0) {
 		stop("Error: no peaks in your data!");
 	}
-	fitspl = gam(num_peaks~s(log10_length,bs='cr'),data=gpw,family="nb")
+	
+	if (!(counts %in% names(gpw))) {
+		stop(sprintf("Error: %s is not a column in data!", counts))
+	}
+	
+	fitspl = gam(as.formula(sprintf("%s~s(log10_length,bs='cr')",counts)),data=gpw,family="nb")
 	as.numeric(predict(fitspl, gpw, type="terms"))->gpw$spline
 	
 	
 	# Construct model formula.
-	model = "num_peaks ~ goterm + spline";
+	model = sprintf("%s ~ goterm + spline",counts);
 	
 	# Run tests on genesets and beware of Windows!
 	if(os != 'Windows' && n_cores > 1) {
 		results_list = mclapply(as.list(ls(geneset@set.gene)), function(go_id) {
-			single_gam_nb_fast(go_id, geneset, gpw, fitspl, 'nbspeed', model)
+			single_pew_fast(go_id, geneset, gpw, fitspl, 'nbspeed', model)
 		}, mc.cores = n_cores)
 	} else {
 		results_list = lapply(as.list(ls(geneset@set.gene)), function(go_id) {
-			single_gam_nb_fast(go_id, geneset, gpw, fitspl, 'nbspeed', model)
+			single_pew_fast(go_id, geneset, gpw, fitspl, 'nbspeed', model)
 		})
 	}
 	
@@ -47,10 +52,10 @@ single_gam_nb_fast = function(go_id, geneset, gpw, fitspl, method, model) {
 	
 	# Filter genes in the geneset to only those in the gpw table.
 	# The gpw table will be truncated depending on which geneset type we're in.
-	go_genes = go_genes[go_genes %in% gpw$gene_id];
+	go_genes = go_genes[go_genes %in% gpw$geneid];
 	
 	# Background genes and the background presence of a peak
-	b_genes = gpw$gene_id %in% go_genes;
+	b_genes = gpw$geneid %in% go_genes;
 	sg_go = gpw$peak[b_genes];
 	
 	# Information about the geneset
@@ -59,7 +64,7 @@ single_gam_nb_fast = function(go_id, geneset, gpw, fitspl, method, model) {
 	r_go_genes_avg_length = mean(gpw$length[b_genes]);
 	
 	# Information about peak genes
-	go_genes_peak = gpw$gene_id[b_genes][sg_go==1];
+	go_genes_peak = gpw$geneid[b_genes][sg_go==1];
 	r_go_genes_peak = paste(go_genes_peak,collapse=", ");
 	r_go_genes_peak_num = length(go_genes_peak);
 	
@@ -67,18 +72,21 @@ single_gam_nb_fast = function(go_id, geneset, gpw, fitspl, method, model) {
 	if (all(as.logical(sg_go))) {
 		cont_length = quantile(gpw$length,0.0025);
 		
-
-		if (method == "nbspeed") {
-			cont_gene = data.frame(
-				gene_id = "continuity_correction",
-				length = cont_length,
-				log10_length = log10(cont_length),
-				num_peaks = 0,
-				peak = 0,
-				stringsAsFactors = F
-			);
-			as.numeric(predict(fitspl, cont_gene, type="terms"))->cont_gene$spline
-		} 
+		#This part needs fixing for arbitrary datasets
+		cont_gene = data.frame(
+			geneid = "continuity_correction",
+			length = cont_length,
+			log10_length = log10(cont_length),
+			num_peaks = 0,
+			peak = 0,
+			stringsAsFactors = F
+		);
+		as.numeric(predict(fitspl, cont_gene, type="terms"))->cont_gene$spline
+		
+		if (method == "polyenrich_weighted") {
+			cont_gene$peak_weight = 0
+		}
+		
 		
 		if ("mappa" %in% names(gpw)) {
 			cont_gene$mappa = 1;
