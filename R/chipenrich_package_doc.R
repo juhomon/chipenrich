@@ -7,6 +7,8 @@
 #' @docType package
 #' @name chipenrich
 #'
+#' @importFrom AnnotationDbi mappedkeys
+#' @importFrom BiocGenerics unlist
 #' @import chipenrich.data
 #' @import GenomicRanges
 #' @importFrom GenomeInfoDb seqinfo
@@ -17,6 +19,10 @@
 #' @import latticeExtra
 #' @import methods
 #' @import mgcv
+#' @import org.Dm.eg.db
+#' @import org.Hs.eg.db
+#' @import org.Mm.eg.db
+#' @import org.Rn.eg.db
 #' @import parallel
 #' @importFrom plyr rbind.fill
 #' @import rms
