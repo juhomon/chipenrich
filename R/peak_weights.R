@@ -19,11 +19,11 @@ calc_peak_weights = function(assigned_peaks) {
 calc_genes_peak_weight = function(assigned_peaks, ppg) {
 	# Sum up the peak weights for each peak in a gene
 	assigned_peaks$peak_weight = assigned_peaks$peak_weight/mean(assigned_peaks$peak_weight)
-	rpg = stats::aggregate(peak_weight ~ geneid, assigned_peaks, sum)
+	rpg = stats::aggregate(peak_weight ~ gene_id, assigned_peaks, sum)
 	
-	d_rpg = data.frame(geneid = rpg$geneid, peak_weight = rpg$peak_weight, stringsAsFactors=F)
+	d_rpg = data.frame(gene_id = rpg$gene_id, peak_weight = rpg$peak_weight, stringsAsFactors=F)
 	
-	result = merge(ppg, d_rpg, by='geneid', all.x=T)
+	result = merge(ppg, d_rpg, by='gene_id', all.x=T)
 	result$peak_weight[is.na(result$peak_weight)] = 0
 	
 	# Order by number of peaks in a gene.

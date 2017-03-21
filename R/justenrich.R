@@ -206,8 +206,8 @@ justpeaks = function(
 	
 	# If they specified their own mappability, check gene names overlap
 	if (user_defined_mappa && user_defined_ldef) {
-		total_unique_genes = union(mappa$geneid, ldef@dframe$geneid)
-		mappa_ldef_inters = intersect(mappa$geneid, ldef@dframe$geneid)
+		total_unique_genes = union(mappa$gene_id, ldef@dframe$gene_id)
+		mappa_ldef_inters = intersect(mappa$gene_id, ldef@dframe$gene_id)
 		frac_overlap = length(mappa_ldef_inters) / length(total_unique_genes)
 		
 		if (frac_overlap < 0.95) {
@@ -289,14 +289,14 @@ justpeaks = function(
 	
 	######################################################
 	# Post-process assigned peaks to add gene symbols and order the columns
-	peak_genes = unique(assigned_peaks$geneid)
+	peak_genes = unique(assigned_peaks$gene_id)
 	
 	# Add gene symbols to peak genes using the genes.* object
 	genes_code = sprintf("genes.%s", organism)
 	data(list = genes_code, package = "chipenrich.data", envir = environment())
 	gene2symbol = get(genes_code)
-	gene2symbol = change_names(gene2symbol, list(GENEID = "geneid", SYMBOL = "gene_symbol"))
-	assigned_peaks = merge(assigned_peaks, gene2symbol, by="geneid", all.x=T)
+	gene2symbol = change_names(gene2symbol, list(gene_id = "gene_id", SYMBOL = "gene_symbol"))
+	assigned_peaks = merge(assigned_peaks, gene2symbol, by="gene_id", all.x=T)
 	
 	# Order the columns. NOTE: This includes the union of column names
 	# when using assign_peaks() and assign_peak_segments()
@@ -306,7 +306,7 @@ justpeaks = function(
 		"peak_start",
 		"peak_end",
 		"peak_midpoint",
-		"geneid",
+		"gene_id",
 		"gene_symbol",
 		"gene_locus_start",
 		"gene_locus_end",
@@ -674,8 +674,8 @@ justenrich = function(
 # 	
 # 	# If they specified their own mappability, check gene names overlap
 # 	if (user_defined_mappa && user_defined_ldef) {
-# 		total_unique_genes = union(mappa$geneid, ldef@dframe$geneid)
-# 		mappa_ldef_inters = intersect(mappa$geneid, ldef@dframe$geneid)
+# 		total_unique_genes = union(mappa$gene_id, ldef@dframe$gene_id)
+# 		mappa_ldef_inters = intersect(mappa$gene_id, ldef@dframe$gene_id)
 # 		frac_overlap = length(mappa_ldef_inters) / length(total_unique_genes)
 # 		
 # 		if (frac_overlap < 0.95) {
@@ -757,14 +757,14 @@ justenrich = function(
 # 	
 	######################################################
 	# Post-process assigned peaks to add gene symbols and order the columns
-#	peak_genes = unique(assigned_peaks$geneid)
+#	peak_genes = unique(assigned_peaks$gene_id)
 	
 	# Add gene symbols to peak genes using the genes.* object
 # 	genes_code = sprintf("genes.%s", organism)
 # 	data(list = genes_code, package = "chipenrich.data", envir = environment())
 # 	gene2symbol = get(genes_code)
-# 	gene2symbol = change_names(gene2symbol, list(GENEID = "geneid", SYMBOL = "gene_symbol"))
-# 	assigned_peaks = merge(assigned_peaks, gene2symbol, by="geneid", all.x=T)
+# 	gene2symbol = change_names(gene2symbol, list(gene_id = "gene_id", SYMBOL = "gene_symbol"))
+# 	assigned_peaks = merge(assigned_peaks, gene2symbol, by="gene_id", all.x=T)
 	
 	# Order the columns. NOTE: This includes the union of column names
 	# when using assign_peaks() and assign_peak_segments()
@@ -774,7 +774,7 @@ justenrich = function(
 # 		"peak_start",
 # 		"peak_end",
 # 		"peak_midpoint",
-# 		"geneid",
+# 		"gene_id",
 # 		"gene_symbol",
 # 		"gene_locus_start",
 # 		"gene_locus_end",
