@@ -438,43 +438,6 @@ chipenrich = function(
 	}
 
 	######################################################
-<<<<<<< HEAD
-	# Post-process assigned peaks to add gene symbols and order the columns
-	peak_genes = unique(assigned_peaks$geneid)
-
-	# Add gene symbols to peak genes using the genes.* object
-	genes_code = sprintf("genes.%s", organism)
-	data(list = genes_code, package = "chipenrich.data", envir = environment())
-	gene2symbol = get(genes_code)
-	gene2symbol = change_names(gene2symbol, list(GENEID = "geneid", SYMBOL = "gene_symbol"))
-	assigned_peaks = merge(assigned_peaks, gene2symbol, by="geneid", all.x=T)
-
-	# Order the columns. NOTE: This includes the union of column names
-	# when using assign_peaks() and assign_peak_segments()
-	column_order = c(
-		"peak_id",
-		"chr",
-		"peak_start",
-		"peak_end",
-		"peak_midpoint",
-		"geneid",
-		"gene_symbol",
-		"gene_locus_start",
-		"gene_locus_end",
-		"nearest_tss",
-		"dist_to_tss",
-		"nearest_tss_gene",
-		"nearest_tss_gene_strand",
-		"overlap_start",
-		"overlap_end",
-		"peak_overlap",
-		"peak_weight")
-	column_order = intersect(column_order, names(assigned_peaks))
-	assigned_peaks = assigned_peaks[, column_order]
-
-	######################################################
-=======
->>>>>>> master
 	# Compute peaks per gene table
 	ppg = num_peaks_per_gene(assigned_peaks, ldef, mappa)
 	# This seems redundant given num_peaks_per_gene(...)
