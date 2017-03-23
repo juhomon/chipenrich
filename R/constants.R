@@ -11,7 +11,7 @@ SUPPORTED_METHODS = list(
 HIDDEN_METHODS = list(
   'binomial' = "test_binomial",
   'broadenrich_splineless' = "test_gam_ratio_splineless",
-  'polyenrich_weighted' = "test_PEW_fast"
+  'polyenrich_weighted' = "test_pew_fast"
 )
 
 METHOD_NAMES = list(

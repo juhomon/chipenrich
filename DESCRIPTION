@@ -17,8 +17,8 @@ Description: ChIP-Enrich performs gene set enrichment testing
 biocViews: Software, Bioinformatics, Enrichment, GeneSetEnrichment
 License: GPL-3
 Imports:
-	AnnotationDbi,
-	BiocGenerics,
+    AnnotationDbi,
+    BiocGenerics,
     chipenrich.data,
     GenomeInfoDb,
     GenomicRanges,
@@ -28,10 +28,10 @@ Imports:
     latticeExtra,
     methods,
     mgcv,
-	org.Dm.eg.db,
-	org.Hs.eg.db,
-	org.Mm.eg.db,
-	org.Rn.eg.db,
+    org.Dm.eg.db,
+    org.Hs.eg.db,
+    org.Mm.eg.db,
+    org.Rn.eg.db,
     parallel,
     plyr,
     rms,
@@ -69,6 +69,9 @@ Collate:
     'plot_dist_to_tss.R'
     'chipenrich.R'
     'chipenrich_package_doc.R'
+    'justenrich.R'
+    'peak_weights.R'
     'test_gam_fast.R'
     'test_nb.R'
     'test_nb_fast.R'
+    'test_pew_fast.R'

@@ -425,7 +425,6 @@ chipenrich = function(
 	if (method == 'polyenrich_weighted') {
 		message("Assigning peaks to genes with assign_peaks(...) with signalValue ..")
 		assigned_peaks = assign_peaks_plus(peakobj, ldef, tss)
-		assigned_peaks$peak_weight = assigned_peaks$signalValue/mean(assigned_peaks$signalValue)
 		message("Successfully assigned peaks..")
 	} else if(!(method == 'broadenrich' || method == 'broadenrich_splineless')) {
 		message("Assigning peaks to genes with assign_peaks(...) ..")
@@ -454,7 +453,6 @@ chipenrich = function(
 	}
 	if (method == 'polyenrich_weighted') {
 		ppg = calc_genes_peak_weight(assigned_peaks, ppg)
-		ppg$num_peaks = ppg$peak_weight
 	}
 
 	######################################################
@@ -503,6 +501,9 @@ chipenrich = function(
 		if (testf == "test_gam_fast") {
 			rtemp = test_func(gobj,ppg,n_cores);
 		}
+        if (testf == "test_pew_fast") {
+            rtemp = test_func(gobj,ppg,n_cores, "peak_weight");
+        }
 
 		# Annotate with geneset descriptions.
 		rtemp$"Description" = as.character(mget(rtemp$Geneset.ID, gobj@set.name, ifnotfound=NA))

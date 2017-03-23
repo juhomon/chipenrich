@@ -1,4 +1,4 @@
-test_PEW_fast = function(geneset,gpw,n_cores,counts) {
+test_pew_fast = function(geneset,gpw,n_cores,counts) {
 	# Restrict our genes/weights/peaks to only those genes in the genesets.
 	# Here, geneset is not all combined, but GOBP, GOCC, etc.
 	# i.e. A specific one.
@@ -44,7 +44,7 @@ test_PEW_fast = function(geneset,gpw,n_cores,counts) {
 	return(results);
 }
 
-single_gam_nb_fast = function(go_id, geneset, gpw, fitspl, method, model) {
+single_pew_fast = function(go_id, geneset, gpw, fitspl, method, model) {
 	final_model = as.formula(model);
 	
 	# Genes in the geneset

@@ -18,7 +18,7 @@ calc_peak_weights = function(assigned_peaks) {
 # Currently the gene_weight is the sum of the peak weights overlapping the locus
 calc_genes_peak_weight = function(assigned_peaks, ppg) {
 	# Sum up the peak weights for each peak in a gene
-	assigned_peaks$peak_weight = assigned_peaks$peak_weight/mean(assigned_peaks$peak_weight)
+	assigned_peaks$peak_weight = assigned_peaks$signalValue/mean(assigned_peaks$signalValue)
 	rpg = stats::aggregate(peak_weight ~ gene_id, assigned_peaks, sum)
 	
 	d_rpg = data.frame(gene_id = rpg$gene_id, peak_weight = rpg$peak_weight, stringsAsFactors=F)
