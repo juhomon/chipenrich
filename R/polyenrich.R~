@@ -1,18 +1,30 @@
-#' Run ChIP-Enrich on narrow genomic regions
+#' Run Poly-Enrich on narrow genomic regions
 #'
-#' ChIP-Enrich is designed for use with 1,000s or 10,000s of narrow
-#' peaks which results in fewer gene loci containing a peak overall. For example,
-#' ChIP-seq experiments for transcription factors. For more details, see the 'ChIP-Enrich
-#' Method' section below. For help choosing a method, see the 'Choosing A Method'
-#' section below, or see the vignette.
+#' Poly-Enrich is designed for narrow peaks, but where there are
+#' 100,000s of peaks which results in nearly every gene locus containing a peak.
+#' For example, ChIP-seq experiments for transcription factors. For more details,
+#' see the 'Poly-Enrich Method' section below. For help choosing a method, see
+#' the 'Choosing A Method' section below, or see the vignette.
 #'
-#' @section ChIP-Enrich Method:
-#' The ChIP-Enrich method uses the presence of a peak in its model for enrichment:
-#' \code{peak ~ GO + s(log10_length)}. Here, \code{GO} is a binary vector indicating
-#' whether a gene is in the gene set being tested, \code{peak} is a binary vector
-#' indicating the presence of a peak in a gene, and \code{s(log10_length)} is a
-#' binomial cubic smoothing spline which adjusts for the relationship between the
-#' presence of a peak and locus length.
+#' @section Poly-Enrich Method:
+#' The Poly-Enrich method uses the number of peaks in genes in its model for
+#' enrichment: \code{num_peaks ~ GO + s(log10_length)}. Here, \code{GO} is a
+#' binary vector indicating whether a gene is in the gene set being tested,
+#' \code{num_peaks} is a numeric vector indicating the number of peaks in each
+#' gene, and \code{s(log10_length)} is a negative binomial cubic smoothing spline
+#' which adjusts for the relationship between the number of peaks in a gene and
+#' locus length.
+#'
+#' @section Poly-Enrich Weighting Options:
+#' Poly-Enrich also allows weighting of individual peaks. Currently the options are:
+#' \describe{
+#'  \item{'signalValue:'}{ weighs each peak based on the Signal Value given in the
+#' narrowPeak format or a user-supplied column, normalized to have mean 1.}
+#'  \item{'logsignalValue:'}{ weighs each peak based on the log Signal Value given in the
+#' narrowPeak format or a user-supplied column, normalized to have mean 1.}
+#'  \item{'multiAssign:'}{ weighs each peak by the inverse of the number of genes
+#' it is assigned to.}
+#' }
 #'
 #' @section Choosing A Method:
 #' The following guidelines are intended to help select an enrichment function:
@@ -25,7 +37,8 @@
 #' ChIP-seq experiments for transcription factors.}
 #'	\item{polyenrich():}{ is also designed for narrow peaks, but where there are
 #' 100,000s of peaks which results in nearly every gene locus containing a peak.
-#' For example, ChIP-seq experiments for transcription factors.}
+#' For example, ChIP-seq experiments for transcription factors. Generally works better
+#' for experiments with more than 40,000 peaks.}
 #' }
 #'
 #' @section Randomizations:
@@ -62,11 +75,11 @@
 #' acceptable column names.
 #' @param out_name Prefix string to use for naming output files. This should not
 #' contain any characters that would be illegal for the system being used (Unix,
-#' Windows, etc.) The default value is "chipenrich", and a file "chipenrich_results.tab"
-#' is produced. If \code{qc_plots} is set, then a file "chipenrich_qcplots.pdf"
+#' Windows, etc.) The default value is "polyenrich", and a file "polyenrich_results.tab"
+#' is produced. If \code{qc_plots} is set, then a file "polyenrich_qcplots.pdf"
 #' is produced containing a number of quality control plots. If \code{out_name}
 #' is set to NULL, no files are written, and results then must be retrieved from
-#' the list returned by \code{chipenrich}.
+#' the list returned by \code{polyenrich}.
 #' @param out_path Directory to which results files will be written out. Defaults
 #' to the current working directory as returned by \code{\link{getwd}}.
 #' @param genome One of the \code{supported_genomes()}.
@@ -83,26 +96,21 @@
 #' must have columns 'chr', 'start', 'end', and 'gene_id' or 'geneid'. For an
 #' example custom locus definition file, see the vignette.
 #' @param method A character string specifying the method to use for enrichment
-#' testing. Must be one of ChIP-Enrich ('chipenrich') (default), or
-#'Fisher's exact test ('fet'). For a list of supported methods, use
-#' \code{supported_methods()}.
+#' testing. Current options are \code{polyenrich} and \code{polyenrich_weighted}.
+#' @param weighting A character string specifying the weighting method if method is
+#' chosen to be 'polyenrich_weighted'. Current options are: 'signalValue',
+#' 'logsignalValue', and 'multiAssign'.
 #' @param mappability One of \code{NULL}, a file path to a custom mappability file,
 #' or an \code{integer} for a valid read length given by \code{supported_read_lengths}.
 #' If a file, it should contain a header with two column named 'gene_id' and 'mappa'.
 #' Gene IDs should be Entrez IDs, and mappability values should range from 0 and 1.
 #' For an example custom mappability file, see the vignette. Default value is NULL.
-#' @param fisher_alt If method is 'fet', this option indicates the alternative
-#' for Fisher's exact test, and must be one of 'two-sided' (default), 'greater',
-#' or 'less'.
 #' @param qc_plots A logical variable that enables the automatic generation of
 #' plots for quality control.
 #' @param min_geneset_size Sets the minimum number of genes a gene set may have
 #' to be considered for enrichment testing.
 #' @param max_geneset_size Sets the maximum number of genes a gene set may have
 #' to be considered for enrichment testing.
-#' @param num_peak_threshold Sets the threshold for how many peaks a gene must
-#' have to be considered as having a peak. Defaults to 1. Only relevant for
-#' Fisher's exact test and ChIP-Enrich methods.
 #' @param randomization One of \code{NULL}, 'complete', 'bylength', or 'bylocation'.
 #' See the Randomizations section below.
 #' @param n_cores The number of cores to use for enrichment testing. We recommend
@@ -112,7 +120,7 @@
 #'
 #' @return A list, containing the following items:
 #'
-#' \item{opts }{A data frame containing the arguments/values passed to \code{chipenrich}.}
+#' \item{opts }{A data frame containing the arguments/values passed to \code{polyenrich}.}
 #'
 #' \item{peaks }{
 #' A data frame containing peak assignments to genes. Peaks which do not overlap
@@ -146,7 +154,7 @@
 #'   \item{length}{ is the length of the gene's locus (depending on which locus definition you chose.)}
 #'   \item{log10_length}{ is the log10(locus length) for the gene.}
 #'   \item{num_peaks}{ is the number of peaks that were assigned to the gene, given the current locus definition. }
-#'   \item{peak}{ is whether or not the gene is considered to have a peak, as defined by \code{num_peak_threshold}. }
+#'   \item{peak}{ is whether or not the gene has a peak. }
 #' }}
 #'
 #' \item{results }{
@@ -172,12 +180,12 @@
 #'
 #' @examples
 #'
-#' # Run ChipEnrich using an example dataset, assigning peaks to the nearest TSS,
+#' # Run Poly-Enrich using an example dataset, assigning peaks to the nearest TSS,
 #' # and on a small custom geneset
 #' data(peaks_E2F4, package = 'chipenrich.data')
 #' peaks_E2F4 = subset(peaks_E2F4, peaks_E2F4$chrom == 'chr1')
 #' gs_path = system.file('extdata','vignette_genesets.txt', package='chipenrich')
-#' results = chipenrich(peaks_E2F4, method='chipenrich', locusdef='nearest_tss',
+#' results = polyenrich(peaks_E2F4, method='polyenrich', locusdef='nearest_tss',
 #' 			genome = 'hg19', genesets=gs_path, out_name=NULL)
 #'
 #' # Get the list of peaks that were assigned to genes.
@@ -189,11 +197,11 @@
 #' @export
 #' @include constants.R utils.R supported.R setup.R randomize.R
 #' @include read.R assign_peaks.R peaks_per_gene.R
-#' @include plot_dist_to_tss.R plot_chipenrich_spline.R
-#' @include test_approx.R test_binomial.R test_fisher.R test_chipenrich_slow.R test_chipenrich.R test_chipapprox.R
-chipenrich = function(
+#' @include plot_dist_to_tss.R plot_polyenrich_spline.R
+#' @include test_polyenrich.R test_polyenrich_slow.R test_polyenrich_weighted.R test_polyapprox.R
+polyenrich = function(
 	peaks,
-	out_name = "chipenrich",
+	out_name = "polyenrich",
 	out_path = getwd(),
 	genome = supported_genomes(),
 	genesets = c(
@@ -201,13 +209,12 @@ chipenrich = function(
 		'GOCC',
 		'GOMF'),
 	locusdef = "nearest_tss",
-	method = 'chipenrich',
+	method = 'polyenrich',
+    weighting = NULL,
 	mappability = NULL,
-	fisher_alt = "two.sided",
 	qc_plots = TRUE,
 	min_geneset_size = 15,
 	max_geneset_size = 2000,
-	num_peak_threshold = 1,
 	randomization = NULL,
 	n_cores = 1
 ) {
@@ -264,17 +271,33 @@ chipenrich = function(
 	######################################################
 	# Assign peaks to genes.
 	message("Assigning peaks to genes with assign_peaks(...) ..")
-	assigned_peaks = assign_peaks(peakobj, ldef, tss)
+	assigned_peaks = assign_peaks(peakobj, ldef, tss, weighting)
 
 	######################################################
 	# Compute peaks per gene table
 	ppg = num_peaks_per_gene(assigned_peaks, ldef, mappa)
-
-	# Add relevant columns to ppg depending on the method
-	if(method == 'chipapprox_old') {
-		message("Calculating weights for approximate method..")
-		ppg = calc_approx_weights(ppg,mappa)
-	}
+    
+    ######################################################
+    # If using weights but not polyenrich_weighted, stop
+    if (!is.null(weighting) & method != "polyenrich_weighted") {
+        stop("You need to use method = polyenrich_weighted if choosing weighting!")
+    }
+    
+    ######################################################
+    # If using the weighted method, add the weights column
+    if (method == "polyenrich_weighted") {
+        if (is.null(weighting)) {
+            # No weights specified
+            stop("No weight options selected!")
+        } else if (!all(weighting %in% c("logsignalValue","signalValue","multiAssign"))) {
+            # Unsupported weights
+            stop(sprintf("Unsupported weights: %s",
+                paste(weighting[which(!(weighting %in% c("logsignalValue","signalValue","multiAssign")))],collapse=", ")))
+        }
+        
+        assigned_peaks = calc_peak_weights(assigned_peaks, weighting)
+        ppg = calc_genes_peak_weight(assigned_peaks, ppg)
+    }
 
 	######################################################
 	# Enrichment
@@ -283,22 +306,19 @@ chipenrich = function(
 		message(sprintf("Test: %s",method_name))
 		message(sprintf("Genesets: %s",gobj@type))
 		message("Running tests..")
-		if (testf == "test_chipenrich_slow") {
+		if (testf == "test_polyenrich_slow") {
 			rtemp = test_func(gobj,ppg,n_cores)
 		}
-		if (testf == "test_fisher_exact") {
-			rtemp = test_func(gobj,ppg,alternative=fisher_alt)
-		}
-		if (testf == "test_binomial") {
-			rtemp = test_func(gobj,ppg)
-		}
-		if (testf == "test_approx") {
-			rtemp = test_func(gobj,ppg,nwp=FALSE,n_cores)
-		}
-		if (testf == "test_chipenrich") {
+		if (testf == "test_polyenrich") {
 			rtemp = test_func(gobj,ppg,n_cores)
 		}
-        if (testf == "test_chipapprox") {
+        if (testf == "test_polyenrich_weighted") {
+            # Note that there is an extra input for the name of the count column
+            # In the future when we make a function purely for enrichment, this will be where you
+            # give the name of the count column.
+            rtemp = test_func(gobj,ppg,n_cores, "sum_peak_weight")
+        }
+        if (testf == "test_polyapprox") {
             rtemp = test_func(gobj,ppg,n_cores)
         }
 
@@ -336,26 +356,17 @@ chipenrich = function(
 		message("Wrote count of peaks per gene to: ", filename_ppg)
 
 		if (qc_plots) {
-			#filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
-			#grDevices::png(filename_qcplots)
-				#print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))
-				#print(..plot_dist_to_tss(peakobj, tss))
-			#grDevices::dev.off()
-
-
 			filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
- 			filename_disttotss = file.path(out_path,sprintf("%s_locuslength.jpeg",out_name));
+ 			filename_disttotss = file.path(out_path,sprintf("%s_disttss.jpeg",out_name));
 
 
 			grDevices::png(filename_qcplots)
-				print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))				
+				print(..plot_polyenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))				
 			grDevices::dev.off()
 
 			grDevices::png(filename_disttotss)
 				print(..plot_dist_to_tss(peakobj, tss))
 			grDevices::dev.off()
-
-
 			message("Wrote QC plots to: ",filename_qcplots)
 		}
 	}
