@@ -310,7 +310,7 @@ hybridenrich <- function(	peaks,
             grDevices::dev.off()
             
             
-            message("Wrote QC plots to: ",filename_qcplots)
+            message("Wrote QC plots to: ",filename_qcplots_poly)
         }
     }
     
