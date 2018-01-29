@@ -357,7 +357,7 @@ polyenrich = function(
 
 		if (qc_plots) {
 			filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
- 			filename_disttotss = file.path(out_path,sprintf("%s_locuslength.jpeg",out_name));
+ 			filename_disttotss = file.path(out_path,sprintf("%s_locuslength.png",out_name));
 
 
 			grDevices::png(filename_qcplots)
