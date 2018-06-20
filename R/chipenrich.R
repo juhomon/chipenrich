@@ -337,11 +337,26 @@ chipenrich = function(
 		message("Wrote count of peaks per gene to: ", filename_ppg)
 
 		if (qc_plots) {
-			filename_qcplots = file.path(out_path, sprintf("%s_qcplots.pdf", out_name))
-			grDevices::pdf(filename_qcplots)
-				print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))
+				#filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
+			#grDevices::png(filename_qcplots)
+				#print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))
+				#print(..plot_dist_to_tss(peakobj, tss))
+			#grDevices::dev.off()
+
+
+			filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
+ 			filename_disttotss = file.path(out_path,sprintf("%s_locuslength.png",out_name));
+
+
+			grDevices::png(filename_qcplots)
+				print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks = num_peaks))				
+			grDevices::dev.off()
+
+			grDevices::png(filename_disttotss)
 				print(..plot_dist_to_tss(peakobj, tss))
 			grDevices::dev.off()
+
+
 			message("Wrote QC plots to: ",filename_qcplots)
 		}
 	}
