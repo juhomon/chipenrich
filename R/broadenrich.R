@@ -312,14 +312,11 @@ broadenrich = function(
 			grDevices::dev.off()
 			message("Wrote pdf QC plots to: ",filename_qcplots)
 
-			filename_qcplots_chip = file.path(out_path, sprintf("%s_qcplots.png", out_name))
-		        grDevices::png(filename_qcplots_chip)
-		    	print(..plot_chipenrich_spline(gpw = ppg, mappability = mappability, num_peaks=num_peaks))				
+			filename_qcplots_broad = file.path(out_path, sprintf("%s_qcplots.png", out_name))
+		        grDevices::png(filename_qcplots_broad)
+		    	print(..plot_gene_coverage(ppg))				
 		    	grDevices::dev.off()
-			message("Wrote QC plots to: ",filename_qcplots)
-
-
-
+			message("Wrote QC png plots to: ",filename_qcplots_broad)
 
 
 		}
