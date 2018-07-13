@@ -314,7 +314,7 @@ broadenrich = function(
 
 			filename_qcplots_broad = file.path(out_path, sprintf("%s_qcplots.png", out_name))
 		        grDevices::png(filename_qcplots_broad)
-		    	print(..plot_gene_coverage(ppg))				
+		    	print(..plot_gene_coverage(ppg, mappability = mappability, num_peaks = num_peaks))				
 		    	grDevices::dev.off()
 			message("Wrote QC png plots to: ",filename_qcplots_broad)
 
