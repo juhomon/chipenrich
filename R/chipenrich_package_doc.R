@@ -15,6 +15,7 @@
 #' @importFrom IRanges IRanges
 #' @import lattice
 #' @import latticeExtra
+#' @import MASS
 #' @import methods
 #' @import mgcv
 #' @import org.Dm.eg.db
