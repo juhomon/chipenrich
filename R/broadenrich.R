@@ -308,9 +308,17 @@ broadenrich = function(
 		if (qc_plots) {
 			filename_qcplots = file.path(out_path, sprintf("%s_qcplots.pdf", out_name))
 			grDevices::pdf(filename_qcplots)
-				print(..plot_gene_coverage(ppg))
+				  print(..plot_gene_coverage(ppg,mappability = mappability, num_peaks = num_peaks))
 			grDevices::dev.off()
 			message("Wrote QC plots to: ",filename_qcplots)
+			
+			filename_qcplots_broad = file.path(out_path, sprintf("%s_qcplots.png", out_name))
+		        grDevices::png(filename_qcplots_broad)
+		    	print(..plot_gene_coverage(ppg, mappability = mappability, num_peaks = num_peaks))				
+		    	grDevices::dev.off()
+			message("Wrote QC png plots to: ",filename_qcplots_broad)
+			
+			
 		}
 	}
 
