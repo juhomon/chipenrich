@@ -228,7 +228,14 @@ proxReg = function(
 	
 	# Creating a column for enhancer distances
 	if ("enhancer" %in% reglocation) {
-		enhancers = chipenrich.data::enhancer.dnase_thurman.0
+		tryCatch({
+			enhancer_code = sprintf("enhancer.%s",genome)
+			data(list=enhancer_code, package = "chipenrich.data", envir = environment())
+			enhancers = get(enhancer_code)
+		}, error = function(e) {
+			stop("Unsupported species for enhancers!")
+		})
+		
 		gene.enh.desc = chipenrich.data::gene.enh.desc
 		peakobj2 = GenomicRanges::makeGRangesFromDataFrame(assigned_peaks,
 					seqnames.field = "chr", start.field = "peak_start",end.field = "peak_end")
