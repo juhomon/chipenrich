@@ -235,8 +235,8 @@ proxReg = function(
 		}, error = function(e) {
 			stop("Unsupported species for enhancers!")
 		})
-		
-		gene.enh.desc = chipenrich.data::gene.enh.desc
+		## THIS MUST ALSO BE SPECIES SPECIFIC! vvv
+		gene.enh.desc = chipenrich.data::gene.enh.desc.hg19
 		peakobj2 = GenomicRanges::makeGRangesFromDataFrame(assigned_peaks,
 					seqnames.field = "chr", start.field = "peak_start",end.field = "peak_end")
 		peak_mids = IRanges::mid(GenomicRanges::ranges(peakobj2))
