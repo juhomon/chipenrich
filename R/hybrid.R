@@ -103,6 +103,8 @@
 #' @export
 #' @include chipenrich.R polyenrich.R
 
+library(RMySQL)
+
 hybridenrich <- function(	peaks,
     out_name = "hybridenrich",
     out_path = getwd(),
@@ -117,6 +119,7 @@ hybridenrich <- function(	peaks,
     max_geneset_size = 2000,
     num_peak_threshold = 1,
     randomization = NULL,
+    uuid=NULL,
     n_cores = 1
 ) {
     genome = match.arg(genome)
@@ -284,6 +287,20 @@ hybridenrich <- function(	peaks,
         filename_ppg = file.path(out_path, sprintf("%s_peaks-per-gene.tab", out_name))
         write.table(ppg, file = filename_ppg, row.names = FALSE, quote = FALSE, sep = "\t")
         message("Wrote count of peaks per gene to: ", filename_ppg)
+        
+        mydb = dbConnect(MySQL(), 
+                  user='prsweb', 
+                  password='prsweb', 
+                  dbname='broadenrich', 
+                 host='localhost')
+                 
+        sentquery = paste("Update broadenrich.inputparams set status='done' where ID =",uuid)         
+        
+        message("Wrote run options/arguments to: ",sentquery )
+                 
+		dbExecute(mydb,sentquery )
+		
+		
         
         if (qc_plots) {
             filename_qcplots = file.path(out_path, sprintf("%s_qcplots.png", out_name))
@@ -457,7 +474,7 @@ hybrid.join <- function(test1, test2) {
     if (nrow(PvalsH) == 0) {
         stop("No common genesets in the two datasets!")
     }
-    message(sprintf("Total of %s common Geneset.IDs", nrow(PvalsH)))
+    message(sprintf("	 %s common Geneset.IDs", nrow(PvalsH)))
 
 
     PvalsH$P.value.Hybrid = 2*pmin(PvalsH$P.value.x, PvalsH$P.value.y, 0.5)
