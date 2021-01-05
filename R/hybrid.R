@@ -297,7 +297,7 @@ hybridenrich <- function(	peaks,
                  
         sentquery = paste("Update broadenrich.inputparams set status='done' where ID =",uuid)         
         
-        message("Wrote run options/arguments to: ",sentquery )
+       
                  
 		dbExecute(mydb,sentquery )
 		
