@@ -120,6 +120,7 @@ hybridenrich <- function(	peaks,
     num_peak_threshold = 1,
     randomization = NULL,
     uuid=NULL,
+    username=NULL,
     n_cores = 1
 ) {
     genome = match.arg(genome)
@@ -289,8 +290,8 @@ hybridenrich <- function(	peaks,
         message("Wrote count of peaks per gene to: ", filename_ppg)
         
         mydb = dbConnect(MySQL(), 
-                  user='prsweb', 
-                  password='prsweb', 
+                  user=username, 
+                  password=username, 
                   dbname='broadenrich', 
                  host='localhost')
                  
