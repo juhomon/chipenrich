@@ -97,6 +97,8 @@ post_process_enrichments = function(enrich) {
         "FDR",
         "Effect",
         "Odds.Ratio",
+	"CI_lower",
+    	"CI_upper",
         "P.Success",
         "Status",
         "N.Geneset.Genes",
