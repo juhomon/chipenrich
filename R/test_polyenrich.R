@@ -51,13 +51,17 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
 	r_go_genes_peak = paste(go_genes_peak,collapse=", ")
 	r_go_genes_peak_num = length(go_genes_peak)
 
-    r_effect = NA
-    r_pval = NA
+     r_coef = NA
+     r_pval = NA
+     r_ci = NA
 
     tryCatch(
     {fit = mgcv::gam(final_model,data=cbind(gpw,goterm=as.numeric(b_genes)),family="nb")
-        # Results from the logistic regression
-        r_effect = coef(fit)[2];
+        # Results from the logistic regression and calculation of confidence interval
+        r_vb = vcov(fit, unconditional = TRUE)
+   	r_se = sqrt(diag(r_vb))
+    	r_coef = coef(fit)
+    	r_ci = r_coef["goterm"] + (c(-1,1) * (2 * r_se["goterm"]))
         r_pval = stats::pchisq(2*(mgcv::logLik.gam(fit)-nullLR),1,lower.tail = F)
     },
     error = {function(e) {warning(
@@ -73,6 +77,8 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
 		"N Geneset Peak Genes"=r_go_genes_peak_num,
 		"Effect"=r_effect,
 		"Odds.Ratio"=exp(r_effect),
+		"CI_lower"=exp(r_ci)[1],
+    		"CI_upper"=exp(r_ci)[2],
 		"Geneset Avg Gene Length"=r_go_genes_avg_length,
 		stringsAsFactors = FALSE)
 
