@@ -88,26 +88,7 @@ get_test_method = function(method) {
 #' of enrichment tests that failed, and ordered first by enrichment 'Status' (if
 #' present) and then 'P.value'.
 post_process_enrichments = function(enrich) {
-    # Re-order the columns to something sensible.
-    column_order = c(
-        "Geneset.Type",
-        "Geneset.ID",
-        "Description",
-        "P.value",
-        "FDR",
-        "Effect",
-        "Odds.Ratio",
-	"CI_lower",
-    	"CI_upper",
-        "P.Success",
-        "Status",
-        "N.Geneset.Genes",
-        "N.Geneset.Peak.Genes",
-        "Geneset.Avg.Gene.Length",
-        "Geneset.Avg.Gene.Coverage",
-        "Geneset.Peak.Genes")
-    column_order = intersect(column_order, names(enrich))
-    enrich = enrich[, column_order]
+  
 
     # Order results by p-value.
     enrich = enrich[order(enrich$P.value), ]
