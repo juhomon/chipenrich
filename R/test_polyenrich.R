@@ -32,7 +32,13 @@ test_polyenrich = function(geneset, gpw, n_cores) {
 }
 
 single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR) {
-	final_model = as.formula(model)
+	
+  require(mgcv.helper)
+  require(magrittr)
+  require(dplyr)
+  require(mgcv.helper)
+  
+  final_model = as.formula(model)
 
 	# Genes in the geneset
 	go_genes = geneset@set.gene[[go_id]]
@@ -58,11 +64,14 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
     tryCatch(
     {fit = mgcv::gam(final_model,data=cbind(gpw,goterm=as.numeric(b_genes)),family="nb")
         # Results from the logistic regression and calculation of confidence interval
-        r_vb = vcov(fit, unconditional = TRUE)
-   	r_se = sqrt(diag(r_vb))
-    	r_coef = coef(fit)
-    	r_ci = r_coef["goterm"] + (c(-1,1) * (2 * r_se["goterm"]))
-        r_pval = stats::pchisq(2*(mgcv::logLik.gam(fit)-nullLR),1,lower.tail = F)
+    
+    ci <- confint.gam(fit)   
+    
+ #    r_vb = vcov(fit, unconditional = TRUE)
+ # 	  r_se = sqrt(diag(r_vb))
+  	r_coef = coef(fit)
+    #r_ci = r_coef["goterm"] + (c(-1,1) * (2 * r_se["goterm"]))
+    r_pval = stats::pchisq(2*(mgcv::logLik.gam(fit)-nullLR),1,lower.tail = F)
     },
     error = {function(e) {warning(
         sprintf("Error in geneset: %s. NAs given", go_id))
@@ -77,8 +86,8 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
 		"N Geneset Peak Genes"=r_go_genes_peak_num,
 		"Effect"=r_coef[2],
 		"Odds.Ratio"=exp(r_coef[2]),
-		"CI_lower"=exp(r_ci)[1],
-    		"CI_upper"=exp(r_ci)[2],
+		"CI_lower"=exp(ci[ci$term=="goterm",]$"2.5%"),
+    		"CI_upper"=exp(ci[ci$term=="goterm",]$"97.5%"),
 		"Geneset Avg Gene Length"=r_go_genes_avg_length,
 		stringsAsFactors = FALSE)
 
