@@ -66,7 +66,8 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
         # Results from the logistic regression and calculation of confidence interval
     
     ci <- confint.gam(fit)   
-    
+    ## using confint function from https://github.com/samclifford/mgcv.helper/
+    ## previously based on https://stats.stackexchange.com/questions/398846/confidence-interval-for-non-smooth-term-in-gam-mgcv which was not applicable in this scenario
  #    r_vb = vcov(fit, unconditional = TRUE)
  # 	  r_se = sqrt(diag(r_vb))
   	r_coef = coef(fit)
@@ -88,6 +89,8 @@ single_polyenrich = function(go_id, geneset, gpw, fitspl, method, model, nullLR)
 		"Odds.Ratio"=exp(r_coef[2]),
 		"CI_lower"=exp(ci[ci$term=="goterm",]$"2.5%"),
     		"CI_upper"=exp(ci[ci$term=="goterm",]$"97.5%"),
+		"Effect_CI_lower"=ci[ci$term=="goterm",]$"2.5%",
+		"Effect_CI_upper"=ci[ci$term=="goterm",]$"97.5%",
 		"Geneset Avg Gene Length"=r_go_genes_avg_length,
 		stringsAsFactors = FALSE)
 
